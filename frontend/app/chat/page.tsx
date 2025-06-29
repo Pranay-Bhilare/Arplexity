@@ -1,6 +1,13 @@
 import React from 'react';
 import Header from '@/components/Header';
 import InputBar from '@/components/InputBar';
+import MessageArea from '@/components/MessageArea';
+
+const staticMessages = [
+  { id: 1, content: 'Hi there, how can I help you?', isUser: false },
+  { id: 2, content: 'Hello! I have a question.', isUser: true },
+  { id: 3, content: 'Sure, go ahead!', isUser: false }
+];
 
 const ChatPage = () => {
   return (
@@ -9,10 +16,8 @@ const ChatPage = () => {
       <div className="w-[70%] bg-white flex flex-col rounded-xl shadow-lg border border-gray-100 overflow-hidden h-[90vh]">
         {/* Header component */}
         <Header />
-        {/* Message area placeholder */}
-        <div className="flex-grow bg-[#FCFCF8] border-b border-gray-100 flex items-center justify-center">
-          <span className="text-gray-400">Messages will appear here</span>
-        </div>
+        {/* MessageArea component with static messages */}
+        <MessageArea messages={staticMessages} />
         {/* InputBar component */}
         <InputBar />
       </div>
