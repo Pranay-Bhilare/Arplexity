@@ -1,5 +1,6 @@
 import React from 'react';
 import Header from '@/components/Header';
+import InputBar from '@/components/InputBar';
 
 const ChatPage = () => {
   return (
@@ -12,10 +13,8 @@ const ChatPage = () => {
         <div className="flex-grow bg-[#FCFCF8] border-b border-gray-100 flex items-center justify-center">
           <span className="text-gray-400">Messages will appear here</span>
         </div>
-        {/* Input bar placeholder */}
-        <div className="h-24 bg-white flex items-center justify-center border-t border-gray-100">
-          <span className="text-gray-400">Input bar</span>
-        </div>
+        {/* InputBar component */}
+        <InputBar />
       </div>
     </div>
   );
