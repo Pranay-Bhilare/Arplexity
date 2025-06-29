@@ -21,12 +21,9 @@ class State(TypedDict):
     messages: Annotated[list, add_messages]
 
 search_tool = TavilySearch(
-    max_results=4,
-    description=(
-        "Use this tool to search the web for any real-time, current, or up-to-date information, "
-        "including weather, news, stock prices, or anything that may have changed recently. "
-        "Always use this tool for questions about the current weather, news, or other live data."
-    )
+    max_results=5,
+    # include_answer=True,
+    include_raw_content=True
 )
 tools = [search_tool]
 llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
@@ -34,13 +31,11 @@ llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
 llm_with_tools = llm.bind_tools(tools=tools)
 
 SYSTEM_PROMPT = (
-    "You are an AI assistant with access to external tools and APIs for fetching real-time or up-to-date information (such as weather, news, stock prices, etc.). "
-    "You must always use the appropriate tool or API to answer any question that requires current, real-time, or frequently changing data. "
-    "Do not attempt to answer such questions from your own knowledge or by guessing. "
-    "If a user asks for information that may have changed since your last update (e.g., 'What is the current weather in Delhi?'), you must call the relevant tool or API to fetch the latest data. "
-    "If you cannot access the required tool or API, respond by stating that you are unable to provide real-time information without the tool. "
-    "For all other questions that do not require real-time data, you may answer from your own knowledge. "
-    "Always prioritize tool use for any request involving current or live data, you must use the TavilySearch tool to search for the answer. Never answer from your own knowledge for such questions."
+    "You are an AI assistant with access to the tavily_search tool, which allows you to search the web for any information, including real-time, current, or up-to-date data (such as weather, news, stock prices, or any other topic). "
+    "For basic facts, logic, and reasoning (such as simple math, definitions, or universally true statements), you may use your own knowledge. "
+    "For any other information—especially anything that could be looked up, gathered, or may change over time—you must always use the tavily_search tool to find the answer, regardless of whether the information is real-time, current, or general knowledge. You can always obtain any information by searching with this tool. "
+    "Never make assumptions or use your own knowledge for information that could be searched or gathered. "
+    "If you cannot access the tool, respond by stating that you are unable to provide information without it."
 )
 
 async def model(state: State) : 
@@ -52,6 +47,31 @@ async def model(state: State) :
     except Exception as e:
         print("Error in llm_with_tools.ainvoke:", e)
     raise
+
+async def tool_node(state):
+    """Custom tool node that handles tool calls from the LLM."""
+    tool_calls = state["messages"][-1].tool_calls
+    
+    tool_messages = []
+    
+    for tool_call in tool_calls:
+        tool_name = tool_call["name"]
+        tool_args = tool_call["args"]
+        tool_id = tool_call["id"]
+
+        if tool_name == "tavily_search_results_json":
+            search_results = await search_tool.ainvoke(tool_args)
+            
+            tool_message = ToolMessage(
+                content=str(search_results),
+                tool_call_id=tool_id,
+                name=tool_name
+            )
+            
+            tool_messages.append(tool_message)
+    
+    # Add the tool messages to the state
+    return {"messages": tool_messages}
 
 graph_builder = StateGraph(State)
 graph_builder.add_node("llm", model)
@@ -117,7 +137,8 @@ async def generate_chat_response(query : str, checkpoint_id: Optional[str] = Non
             config=config
         )
 
-    async for event in events : 
+    async for event in events :
+        print(event) 
         event_type = event["event"]
 
         if event_type == "on_chat_model_stream":
@@ -126,29 +147,45 @@ async def generate_chat_response(query : str, checkpoint_id: Optional[str] = Non
             safe_content = chunk_content.replace("'", "\\'").replace("\n", "\\n")
             
             yield f"data: {{\"type\": \"content\", \"content\": \"{safe_content}\"}}\n\n"
-        elif event_type == "on_chat_model_end" : 
-            # Checking if there are any tool calls
-            tool_calls = event["data"]["output"].tool_calls if hasattr(event["data"]["output"], "tool_calls") else []
-            search_calls = [call for call in tool_calls if call["name"] == "tavily_search_results_json"]
-
-            if search_calls:
-                search_query = search_calls[0]["args"].get("query", "")
-                # safe json parsing
+        elif event_type == "on_tool_start":
+            # Tool call is starting
+            tool_name = event.get("name", "")
+            if tool_name == "tavily_search_results_json" or tool_name == "tavily_search":
+                tool_input = event["data"]["input"]
+                search_query = tool_input.get("query", "")
                 safe_query = search_query.replace('"', '\\"').replace("'", "\\'").replace("\n", "\\n")
-                # Signal that a search is starting
                 yield f"data: {{\"type\": \"search_start\", \"query\": \"{safe_query}\"}}\n\n"
-        elif event_type == "on_tool_end" and event["name"] == "tavily_search_results_json":
-            output = event["data"]["output"]
-
-            if isinstance(output, list):
-                # extract URLs from list of search results
-                urls = []
-                for item in output:
-                    if isinstance(item, dict) and "url" in item:
-                        urls.append(item["url"])
-                urls_json = json.dumps(urls)
-                yield f"data : {{\"type\": \"search_results\", \"urls\": {urls_json}}}\n\n"
-
+        elif event_type == "on_tool_end":
+            tool_name = event.get("name", "")
+            if tool_name == "tavily_search_results_json" or tool_name == "tavily_search":
+                output = event["data"]["output"]
+                # Try to extract URLs from the output
+                try:
+                    if isinstance(output, ToolMessage):
+                        output_content = output.content
+                    else:
+                        output_content = output
+                    # Try to parse as JSON
+                    if isinstance(output_content, str):
+                        output_json = json.loads(output_content)
+                    else:
+                        output_json = output_content
+                    urls = []
+                    if isinstance(output_json, dict) and "results" in output_json:
+                        for item in output_json["results"]:
+                            if isinstance(item, dict) and "url" in item:
+                                urls.append(item["url"])
+                    elif isinstance(output_json, list):
+                        for item in output_json:
+                            if isinstance(item, dict) and "url" in item:
+                                urls.append(item["url"])
+                    urls_json = json.dumps(urls)
+                    yield f"data: {{\"type\": \"search_results\", \"urls\": {urls_json}}}\n\n"
+                except Exception as e:
+                    print("Error parsing tool output for URLs:", e)
+        elif event_type == "on_chat_model_end":
+            # Optionally, handle end of chat model
+            pass
     yield f"data: {{\"type\": \"end\"}}\n\n"
 
 
