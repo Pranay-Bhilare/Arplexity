@@ -10,6 +10,8 @@ dependencies = [
     "langchain-community>=0.3.26",
     "langchain-google-genai>=2.1.5",
     "langchain-groq>=0.3.4",
+    "langchain-tavily>=0.2.5",
     "langgraph>=0.5.0",
     "python-dotenv>=1.1.1",
+    "uvicorn>=0.35.0",
 ]

@@ -2,9 +2,10 @@ from typing import TypedDict, Annotated, Optional
 from langgraph.graph import add_messages, StateGraph, START
 from langgraph.prebuilt import ToolNode, tools_condition
 from langchain_groq import ChatGroq
-from langchain_core.messages import HumanMessage, AIMessageChunk, ToolMessage
+from langchain_core.messages import HumanMessage, AIMessageChunk, ToolMessage, SystemMessage
+from langchain_google_genai import ChatGoogleGenerativeAI
 from dotenv import load_dotenv
-from langchain_community.tools.tavily_search import TavilySearchResults
+from langchain_tavily import TavilySearch
 from fastapi import FastAPI, Query
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,20 +20,38 @@ memory = MemorySaver()
 class State(TypedDict):
     messages: Annotated[list, add_messages]
 
-search_tool = TavilySearchResults(
+search_tool = TavilySearch(
     max_results=4,
+    description=(
+        "Use this tool to search the web for any real-time, current, or up-to-date information, "
+        "including weather, news, stock prices, or anything that may have changed recently. "
+        "Always use this tool for questions about the current weather, news, or other live data."
+    )
 )
 tools = [search_tool]
-llm = ChatGroq(model="")
+llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
 
 llm_with_tools = llm.bind_tools(tools=tools)
 
+SYSTEM_PROMPT = (
+    "You are an AI assistant with access to external tools and APIs for fetching real-time or up-to-date information (such as weather, news, stock prices, etc.). "
+    "You must always use the appropriate tool or API to answer any question that requires current, real-time, or frequently changing data. "
+    "Do not attempt to answer such questions from your own knowledge or by guessing. "
+    "If a user asks for information that may have changed since your last update (e.g., 'What is the current weather in Delhi?'), you must call the relevant tool or API to fetch the latest data. "
+    "If you cannot access the required tool or API, respond by stating that you are unable to provide real-time information without the tool. "
+    "For all other questions that do not require real-time data, you may answer from your own knowledge. "
+    "Always prioritize tool use for any request involving current or live data, you must use the TavilySearch tool to search for the answer. Never answer from your own knowledge for such questions."
+)
 
 async def model(state: State) : 
-    response = await llm_with_tools.ainvoke(state["messages"])  
-    return {
-        "messages": [response], 
-    }
+    try:
+        response = await llm_with_tools.ainvoke(state["messages"])
+        return {
+            "messages": [response], 
+        }
+    except Exception as e:
+        print("Error in llm_with_tools.ainvoke:", e)
+    raise
 
 graph_builder = StateGraph(State)
 graph_builder.add_node("llm", model)
@@ -42,7 +61,6 @@ graph_builder.add_conditional_edges("llm",tools_condition)
 graph_builder.add_edge("tools", "llm")
 
 graph = graph_builder.compile(checkpointer=memory)
-
 
 app = FastAPI()
 
@@ -66,6 +84,8 @@ def serialise_ai_message_chunk(chunk) :
 async def generate_chat_response(query : str, checkpoint_id: Optional[str] = None) :
     is_new_convo = checkpoint_id is None 
 
+    system_message = SystemMessage(content=SYSTEM_PROMPT)
+
     if is_new_convo : 
         new_checkpoint_id = str(uuid4())
 
@@ -76,7 +96,7 @@ async def generate_chat_response(query : str, checkpoint_id: Optional[str] = Non
         }
 
         events = graph.astream_events(
-            {"messages" : [HumanMessage(query)]},
+            {"messages" : [system_message, HumanMessage(query)]},
             version = "v2",
             config = config
         )
@@ -92,7 +112,7 @@ async def generate_chat_response(query : str, checkpoint_id: Optional[str] = Non
         }
         # Continues existing conversation
         events = graph.astream_events(
-            {"messages": [HumanMessage(content=query)]},
+            {"messages": [system_message, HumanMessage(content=query)]},
             version="v2",
             config=config
         )
