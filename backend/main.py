@@ -121,8 +121,8 @@ async def generate_chat_response(query : str, checkpoint_id: Optional[str] = Non
             config = config
         )
 
-        # Sending the checkppoint id first and then continuing the funtion
-        yield f"data: {{\"type\": \"checkpoint\", \"checkpoint_id\": \"{new_checkpoint_id}\"}}\n\n"
+        # Sending the checkpoint id first and then continuing the function
+        yield f"data: {json.dumps({'type': 'checkpoint', 'checkpoint_id': new_checkpoint_id})}\n\n"
 
     else :
         config = {
@@ -143,18 +143,15 @@ async def generate_chat_response(query : str, checkpoint_id: Optional[str] = Non
 
         if event_type == "on_chat_model_stream":
             chunk_content = serialise_ai_message_chunk(event["data"]["chunk"])
-            # for safe JSON parsing
-            safe_content = chunk_content.replace("'", "\\'").replace("\n", "\\n")
-            
-            yield f"data: {{\"type\": \"content\", \"content\": \"{safe_content}\"}}\n\n"
+            # Use json.dumps for safe JSON encoding
+            yield f"data: {json.dumps({'type': 'content', 'content': chunk_content})}\n\n"
         elif event_type == "on_tool_start":
             # Tool call is starting
             tool_name = event.get("name", "")
             if tool_name == "tavily_search_results_json" or tool_name == "tavily_search":
                 tool_input = event["data"]["input"]
                 search_query = tool_input.get("query", "")
-                safe_query = search_query.replace('"', '\\"').replace("'", "\\'").replace("\n", "\\n")
-                yield f"data: {{\"type\": \"search_start\", \"query\": \"{safe_query}\"}}\n\n"
+                yield f"data: {json.dumps({'type': 'search_start', 'query': search_query})}\n\n"
         elif event_type == "on_tool_end":
             tool_name = event.get("name", "")
             if tool_name == "tavily_search_results_json" or tool_name == "tavily_search":
@@ -179,14 +176,14 @@ async def generate_chat_response(query : str, checkpoint_id: Optional[str] = Non
                         for item in output_json:
                             if isinstance(item, dict) and "url" in item:
                                 urls.append(item["url"])
-                    urls_json = json.dumps(urls)
-                    yield f"data: {{\"type\": \"search_results\", \"urls\": {urls_json}}}\n\n"
+                    # Use json.dumps for the entire payload
+                    yield f"data: {json.dumps({'type': 'search_results', 'urls': urls})}\n\n"
                 except Exception as e:
                     print("Error parsing tool output for URLs:", e)
         elif event_type == "on_chat_model_end":
             # Optionally, handle end of chat model
             pass
-    yield f"data: {{\"type\": \"end\"}}\n\n"
+    yield f"data: {json.dumps({'type': 'end'})}\n\n"
 
 
 @app.get("/chat_stream/{message}")

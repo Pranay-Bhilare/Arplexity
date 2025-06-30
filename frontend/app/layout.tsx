@@ -25,9 +25,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen w-full bg-gradient-to-br from-[#0a0d13] via-[#181e29] to-[#10131a] relative overflow-x-hidden`}
       >
-        {children}
+        {/* Animated background gradient (optional, can be replaced with a 3D/particle effect) */}
+        <div className="pointer-events-none fixed inset-0 z-0 bg-gradient-to-tr from-blue-900/40 via-indigo-900/30 to-blue-950/60 animate-gradient-move" />
+        <div className="relative z-10 min-h-screen flex flex-col">
+          {children}
+        </div>
       </body>
     </html>
   );
