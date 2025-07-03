@@ -5,7 +5,7 @@
 ---
 
 ## Overview
-Arplexity is a futuristic AI chat platform designed for instant, natural conversations. It features:
+Arplexity is a AI-powered search and question-answering platform designed for instant, natural conversations, to provide direct, concise answers to user queries by summarizing information from various sources and citing them, similar to a research assistant It features:
 - **Real-time AI chat** powered by state-of-the-art language models
 - **Live web search** for up-to-date answers with source links
 - **Modern UI** for a good user experience
@@ -14,7 +14,6 @@ Arplexity is a futuristic AI chat platform designed for instant, natural convers
 ## Features
 - 🚀 **Real-time AI Chat:** Instant, natural conversations with Arplexity AI. No lag, no limits.
 - 🌐 **Web Search:** Get up-to-date answers using live web search and source links.
-- 🪩 **3D Experience:** Futuristic, glassy, and animated chat UI like no other.
 - 🔒 **Privacy First:** Your data stays yours. No tracking, no compromise.
 
 ## Tech Stack
