@@ -51,13 +51,6 @@ const features = [
   },
   {
     icon: (
-      <svg className="w-10 h-10 text-cyan-400 drop-shadow-neon" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-    ),
-    title: '3D Experience',
-    desc: 'Futuristic, glassy, and animated. A chat UI like no other.'
-  },
-  {
-    icon: (
       <svg className="w-10 h-10 text-cyan-400 drop-shadow-neon" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M7 8h10M7 12h4m1 8a9 9 0 100-18 9 9 0 000 18z" /></svg>
     ),
     title: 'Privacy First',
@@ -92,7 +85,7 @@ export default function Landing() {
         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.4, duration: 0.8, type: 'spring' }} className="bg-[#181e29]/80 border border-cyan-700/20 rounded-2xl shadow-xl px-8 py-6 mb-10 max-w-2xl text-center backdrop-blur-xl">
           <p className="text-2xl text-cyan-200/90 font-medium">
             The next-gen AI chat experience.<br />
-            <span className="text-cyan-400 font-bold">Futuristic. Private. 3D. Mind-blowing.</span>
+            <span className="text-cyan-400 font-bold">With Your Privacy On Top Priority</span>
           </p>
         </motion.div>
         {/* 3D Effect Buttons */}
@@ -116,7 +109,7 @@ export default function Landing() {
       {/* Features Section */}
       <section id="features" className="relative z-10 w-full flex flex-col items-center py-20">
         <h2 className="text-4xl sm:text-5xl font-bold text-cyan-100 mb-14 text-center drop-shadow-lg">Features</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-10 w-full max-w-7xl px-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-10 w-full max-w-5xl px-4">
           {features.map((f, i) => (
             <motion.div
               key={f.title}
@@ -125,12 +118,12 @@ export default function Landing() {
               viewport={{ once: true }}
               transition={{ delay: 0.1 * i, duration: 0.7, type: 'spring' }}
               whileHover={{ rotateY: 8, scale: 1.07, boxShadow: '0 8px 32px 0 #14b8a6' }}
-              className="rounded-2xl bg-[#181e29]/80 border border-cyan-700/20 shadow-2xl p-10 flex flex-col items-center text-center backdrop-blur-xl hover:scale-105 transition-all duration-300 cursor-pointer"
+              className="rounded-2xl bg-[#181e29]/80 border border-cyan-700/20 shadow-2xl p-10 flex flex-col items-center text-center backdrop-blur-xl hover:scale-105 transition-all duration-300 cursor-pointer font-sans"
               style={{ perspective: 800 }}
             >
               <div className="mb-5">{f.icon}</div>
-              <h3 className="text-2xl font-bold text-cyan-100 mb-2">{f.title}</h3>
-              <p className="text-cyan-200/80 text-lg">{f.desc}</p>
+              <h3 className="text-2xl font-bold text-cyan-100 mb-2 font-sans">{f.title}</h3>
+              <p className="text-cyan-200/80 text-lg font-sans">{f.desc}</p>
             </motion.div>
           ))}
         </div>

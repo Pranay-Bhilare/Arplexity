@@ -31,7 +31,7 @@ llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
 llm_with_tools = llm.bind_tools(tools=tools)
 
 SYSTEM_PROMPT = (
-    "You are an AI assistant with access to the tavily_search tool, which allows you to search the web for any information, including real-time, current, or up-to-date data (such as weather, news, stock prices, or any other topic). "
+    "You are an AI assistant with access to the tavily_search tool, which allows you to search the web for any information, including real-time, current, or up-to-date data (such as weather, news, stock prices, or any other topic), just always use `general` as topic while calling this tool to prevent tool call failures, you'll still get correct relevant information "
     "For basic facts, logic, and reasoning (such as simple math, definitions, or universally true statements), you may use your own knowledge. "
     "For any other information—especially anything that could be looked up, gathered, or may change over time—you must always use the tavily_search tool to find the answer, regardless of whether the information is real-time, current, or general knowledge. You can always obtain any information by searching with this tool. "
     "Never make assumptions or use your own knowledge for information that could be searched or gathered. "
