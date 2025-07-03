@@ -28,7 +28,7 @@ Arplexity is a futuristic AI chat platform designed for instant, natural convers
 
 **Backend:**
 - FastAPI (Python)
-- LangGraph, LangChain, LangChain Community
+- LangGraph, LangChain
 - Google Generative AI (Gemini)
 - TavilySearch (live web search)
 - Groq
@@ -55,7 +55,11 @@ pnpm dev     # or npm run dev
 ```bash
 cd backend
 # Create a .env file with your API keys (see .env.example if available)
+# install dependecies using uv
+uv add -r requirements.txt 
+# or if using pip to install dependencies
 pip install -r requirements.txt
+# run the backend fastapi server
 uvicorn main:app --reload
 ```
 
@@ -65,13 +69,3 @@ uvicorn main:app --reload
 ## Usage
 - Visit the frontend (usually at `http://localhost:3000`) and start chatting!
 - The backend runs on `http://127.0.0.1:8000` by default.
-
-## Contributing
-Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
-
-## License
-[MIT](LICENSE)
-
----
-
-Made with ❤️ by the Arplexity team.
